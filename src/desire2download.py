@@ -71,7 +71,7 @@ class Desire2Download:
 		courseLinks = []
 
 		for course in courseElements:
-			# print('Adding ' + course.text + ' and ' + course.get_attribute("href"))
+			print('Adding ' + course.text + ' and ' + course.get_attribute("href"))
 			courseNames.append(course.text)
 			courseLinks.append(course.get_attribute("href"))
 
