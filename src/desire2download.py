@@ -67,13 +67,34 @@ class Desire2Download:
 
 		courseElements = self.browser.find_elements_by_xpath(courses)
 
-		courseNames = []
-		courseLinks = []
+		courseInfoDict = {}
 
 		for course in courseElements:
-			print('Adding ' + course.text + ' and ' + course.get_attribute("href"))
-			courseNames.append(course.text)
-			courseLinks.append(course.get_attribute("href"))
+			# print('Adding ' + course.text + ' and ' + course.get_attribute("href"))
+			courseInfoDict[course.text] = course.get_attribute("href")
+
+		self.courseInfoDict = courseInfoDict
+
+	def getCourseHome(self) :
+		self.removeIgnoreCourses()
+
+		# for each course, open the URI.
+		for courseName in self.courseInfoDict :
+			self.browser.get(self.courseInfoDict[courseName])
+			print(courseName + self.courseInfoDict[courseName])
+
+	
+	def removeIgnoreCourses(self) :
+		for ignoreCourseRegex in self.ignoreCourses :
+			listOfKeysToRemove = []
+			# Iterate through course names and add any courses that need to be ignored
+			for courseNames in self.courseInfoDict :
+				if (ignoreCourseRegex.search(courseNames)) :
+					listOfKeysToRemove.append(courseNames)
+
+			# Now actually delete those courses in the dictionar y
+			for keyToBeRemoved in listOfKeysToRemove :
+				del self.courseInfoDict[keyToBeRemoved]
 
 
 	def tearDown(self) :
