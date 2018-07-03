@@ -1,16 +1,18 @@
 import sys
 import getopt
 import re
+import os
 from desire2download import Desire2Download
+from sys import platform
 
 def usage():
-	print('usage: Desire2Download [-u user] [-p  password] [-s pathToPhantomJS] ... [-i ignoreRegex] [-c courseRegex] [-o overwrite]')
+	print('usage: Desire2Download [-u user] [-p  password] ... [-i ignoreRegex] [-c courseRegex] [-o overwrite]')
 	sys.exit(2)
 
 def main():
 
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'hou:p:i:c:s:', ['help', 'overwrite', 'user=', 'pass=', 'ignore=', 'course=', 'path='])
+		opts, args = getopt.getopt(sys.argv[1:], 'hou:p:i:c:', ['help', 'overwrite', 'user=', 'pass=', 'ignore=', 'course='])
 	except getopt.GetoptError:
 		usage()
 
@@ -21,6 +23,15 @@ def main():
 	ignoreFiles = []
 	ignoreCourses = []
 
+	# First determine the platform the application is running in and set the phantomJS accordingly.
+	if platform == "win32":
+		# Windows
+		path = os.path.abspath("../platform/windows/PhantomJS/bin/phantomjs.exe")
+	elif platform == "darwin":
+		# OS X
+		path = os.path.abspath("../platform/mac/PhantomJS/bin/phantomjs")
+		
+
 	for opt, arg in opts:
 		if opt in ('-h', '--help'):
 			usage()
@@ -30,8 +41,6 @@ def main():
 			password = arg
 		if opt in ('-o', '--overwrite'):
 			overwrite = True
-		if opt in ('-s', '--path'):
-			path = arg
 		if opt in ('-i', '--ignore'):
 			try:
 				regex = re.compile(arg)

@@ -1,5 +1,9 @@
 import mechanicalsoup as ms
 from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import TimeoutException
 from bs4 import BeautifulSoup as bs
 import time
 import sys
@@ -44,7 +48,7 @@ class Desire2Download:
 			# Click login button
 			browser.find_element_by_xpath(xpaths['submitButton']).click()
 
-			# Check if it login credentials is correct
+			# Check if its login credentials is correct
 			if browser.current_url != self.url + "/d2l/home" :
 				print("Error: Invalid username or password")
 				sys.exit(2)
@@ -62,11 +66,10 @@ class Desire2Download:
 		# (Can't use BeautifulSoup or MechanicalSoup due to new learn updates)
 		courses = "//a[@class='d2l-image-tile-base-link style-scope d2l-image-tile-base']"
 
-		# Sleep for 5 seconds to let javascript load. 5 seconds should be enough for most computers.
+		# Increasing time will guarantee javascript loading but 5 sec should be enough in most cases.
 		time.sleep(5)
 
 		courseElements = self.browser.find_elements_by_xpath(courses)
-
 		courseInfoDict = {}
 
 		for course in courseElements:
@@ -75,15 +78,32 @@ class Desire2Download:
 
 		self.courseInfoDict = courseInfoDict
 
+	# This method is basically called when app logged into learn and lists all the courses and commands available.
 	def getCourseHome(self) :
 		self.removeIgnoreCourses()
 
+		toPrint = self.getCommands()
+
+		# print for init.
+		toPrint += "\nList of all the courses:\n"
+
 		# for each course, open the URI.
 		for courseName in self.courseInfoDict :
-			self.browser.get(self.courseInfoDict[courseName])
-			print(courseName + self.courseInfoDict[courseName])
+			toPrint += "- " + courseName + "\n"
 
-	
+		print(toPrint)
+
+	def getCommands(self) :
+		toRet = "\nList of available commands:\n"
+
+		toRet += "- ls: list information about files in current directory\n"
+		toRet += "- cd: change directory\n"
+		toRet += "- d2d: downloads specified file and drops it to your dropbox\n"
+		toRet += "       If file is not specified then everything under the current directory\n"
+		toRet += "       will be downloaded and dropped into your dropbox\n"
+
+		return toRet
+
 	def removeIgnoreCourses(self) :
 		for ignoreCourseRegex in self.ignoreCourses :
 			listOfKeysToRemove = []
