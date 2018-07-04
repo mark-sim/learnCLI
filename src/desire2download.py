@@ -7,6 +7,7 @@ from selenium.common.exceptions import TimeoutException
 from bs4 import BeautifulSoup as bs
 import time
 import sys
+import re
 
 class Desire2Download:
 
@@ -18,6 +19,12 @@ class Desire2Download:
 		self.ignoreCourses = ignoreCourses
 		self.path = path
 		self.url = "https://learn.uwaterloo.ca"
+		self.filesInCurrentDirectory = []
+		# list of browsers
+		self.pageHistory = []
+		# list of files
+		self.fileHistory = []
+		self.browsers = {}
 
 	def login(self) :
 		xpaths = { 'usernameTxtBox' : "//input[@name='username']",
@@ -57,6 +64,8 @@ class Desire2Download:
 			print("Logged in.")
 
 			self.browser = browser
+			self.browsers["home"] = self.browser
+			self.pageHistory.append(self.browser)
 
 		except KeyboardInterrupt:
 			browser.close()
@@ -67,7 +76,8 @@ class Desire2Download:
 		courses = "//a[@class='d2l-image-tile-base-link style-scope d2l-image-tile-base']"
 
 		# Increasing time will guarantee javascript loading but 5 sec should be enough in most cases.
-		time.sleep(5)
+		# time.sleep(5)
+		self.load(courses, 5)
 
 		courseElements = self.browser.find_elements_by_xpath(courses)
 		courseInfoDict = {}
@@ -75,10 +85,24 @@ class Desire2Download:
 		for course in courseElements:
 			# print('Adding ' + course.text + ' and ' + course.get_attribute("href"))
 			courseInfoDict[course.text] = course.get_attribute("href")
+			browser = webdriver.PhantomJS(executable_path = self.path)
+			browser.set_window_size(1124, 850)
+			browser.get(courseInfoDict[course.text])
+			self.browsers[course.text] = browser
 
 		self.courseInfoDict = courseInfoDict
 
+	# Method to wait until condition is loaded
+	def load(self, xpath, timeout) :
+		try:
+			element_present = EC.presence_of_element_located((By.XPATH, xpath))
+			WebDriverWait(self.browser, timeout).until(element_present)
+			time.sleep(1)
+		except TimeoutException:
+   			print("Timed out waiting for page to load")
+
 	# This method is basically called when app logged into learn and lists all the courses and commands available.
+	# This is only called once.
 	def getCourseHome(self) :
 		self.removeIgnoreCourses()
 
@@ -90,12 +114,16 @@ class Desire2Download:
 		# for each course, open the URI.
 		for courseName in self.courseInfoDict :
 			toPrint += "- " + courseName + "\n"
-
+			self.filesInCurrentDirectory.append(courseName)
+		self.fileHistory.append(self.filesInCurrentDirectory)
 		print(toPrint)
 
+	# This method is basically help command.
 	def getCommands(self) :
 		toRet = "\nList of available commands:\n"
 
+		toRet += "- h: help\n"
+		toRet += "- q: quit\n"
 		toRet += "- ls: list information about files in current directory\n"
 		toRet += "- cd: change directory\n"
 		toRet += "- d2d: downloads specified file and drops it to your dropbox\n"
@@ -103,6 +131,64 @@ class Desire2Download:
 		toRet += "       will be downloaded and dropped into your dropbox\n"
 
 		return toRet
+
+	# Method to print files in current directory
+	def lsCommand(self) :
+		toPrint = "\nFiles in current directory:\n"
+		for file in self.filesInCurrentDirectory :
+			toPrint += "- " + file + "\n"
+		print(toPrint)
+
+	# Method to change directory.
+	def cdCommand(self, commands) :
+		directory = ""
+		for c in commands :
+			directory += " " + c
+		directory = directory.strip()
+
+		browser = self.browsers.get(directory)
+
+		if directory == ".." :
+			size = len(self.pageHistory)
+			if size == 1 :
+				print("This is the home directory")
+			else :	
+				self.browser = self.pageHistory[size - 2]
+				self.filesInCurrentDirectory = self.fileHistory[size - 2]
+				self.pageHistory.pop()
+				self.fileHistory.pop()
+		elif browser != None :
+			self.browser = browser
+			self.filesInCurrentDirectory = []
+			self.pageHistory.append(self.browser)
+			self.fileHistory.append(self.filesInCurrentDirectory)
+		elif directory in self.filesInCurrentDirectory :
+			print("do something")
+		else :
+			print(directory + " does not exist")
+
+
+	def getInput(self) :
+		command = ""
+		while command != "q" :
+			command = input(">>> ").strip()
+			self.processInput(command)
+
+	def processInput(self, commands) :
+		command = re.split(r'\s{1,}', commands)
+		if command[0] == "ls":
+			self.lsCommand()
+		elif command[0] == "cd":
+			self.cdCommand(command[1:])
+		elif command[0] == "d2d":
+			print("d2d")
+		elif command[0] == "h":
+			print(self.getCommands())
+		elif command[0] == "q":
+			#do nothing
+			print("Exiting...")
+		else :
+			print("Unknown command. Please type h to see list of commands available")
 
 	def removeIgnoreCourses(self) :
 		for ignoreCourseRegex in self.ignoreCourses :

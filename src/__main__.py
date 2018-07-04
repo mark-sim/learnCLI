@@ -65,6 +65,7 @@ def main():
 	desire2Download.login()
 	desire2Download.getContent()
 	desire2Download.getCourseHome()
+	desire2Download.getInput()
 	desire2Download.tearDown()
 
 if __name__ == '__main__' :
