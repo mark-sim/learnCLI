@@ -24,7 +24,6 @@ class Desire2Download:
 		self.pageHistory = []
 		# list of files
 		self.fileHistory = []
-		self.browsers = {}
 
 	def login(self) :
 		xpaths = { 'usernameTxtBox' : "//input[@name='username']",
@@ -64,8 +63,7 @@ class Desire2Download:
 			print("Logged in.")
 
 			self.browser = browser
-			self.browsers["home"] = self.browser
-			self.pageHistory.append(self.browser)
+			self.pageHistory.append(self.browser.current_url)
 
 		except KeyboardInterrupt:
 			browser.close()
@@ -84,11 +82,7 @@ class Desire2Download:
 
 		for course in courseElements:
 			# print('Adding ' + course.text + ' and ' + course.get_attribute("href"))
-			courseInfoDict[course.text] = course.get_attribute("href")
-			browser = webdriver.PhantomJS(executable_path = self.path)
-			browser.set_window_size(1124, 850)
-			browser.get(courseInfoDict[course.text])
-			self.browsers[course.text] = browser
+			courseInfoDict[course.text.strip()] = course.get_attribute("href")
 
 		self.courseInfoDict = courseInfoDict
 
@@ -146,24 +140,19 @@ class Desire2Download:
 			directory += " " + c
 		directory = directory.strip()
 
-		browser = self.browsers.get(directory)
-
 		if directory == ".." :
 			size = len(self.pageHistory)
 			if size == 1 :
 				print("This is the home directory")
 			else :	
-				self.browser = self.pageHistory[size - 2]
+				self.browser.get(self.pageHistory[size - 2])
 				self.filesInCurrentDirectory = self.fileHistory[size - 2]
 				self.pageHistory.pop()
 				self.fileHistory.pop()
-		elif browser != None :
-			self.browser = browser
-			self.filesInCurrentDirectory = []
-			self.pageHistory.append(self.browser)
-			self.fileHistory.append(self.filesInCurrentDirectory)
 		elif directory in self.filesInCurrentDirectory :
-			print("do something")
+			self.filesInCurrentDirectory = ["testing"]
+			self.pageHistory.append("do something")
+			self.fileHistory.append(self.filesInCurrentDirectory)
 		else :
 			print(directory + " does not exist")
 
