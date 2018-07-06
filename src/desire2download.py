@@ -20,10 +20,12 @@ class Desire2Download:
 		self.path = path
 		self.url = "https://learn.uwaterloo.ca"
 		self.filesInCurrentDirectory = []
-		# list of browsers
+		# list of browsers these are URLs
+		# URL possibilities: [{home}, {courses}, {grades, announcements, content}, {if content: }]
 		self.pageHistory = []
-		# list of files
+		# list of files.
 		self.fileHistory = []
+
 
 	def login(self) :
 		xpaths = { 'usernameTxtBox' : "//input[@name='username']",
@@ -74,7 +76,7 @@ class Desire2Download:
 		courses = "//a[@class='d2l-image-tile-base-link style-scope d2l-image-tile-base']"
 
 		# Increasing time will guarantee javascript loading but 5 sec should be enough in most cases.
-		# time.sleep(5)
+		time.sleep(1)
 		self.load(courses, 5)
 
 		courseElements = self.browser.find_elements_by_xpath(courses)
@@ -94,6 +96,25 @@ class Desire2Download:
 			time.sleep(1)
 		except TimeoutException:
    			print("Timed out waiting for page to load")
+
+   	# Method to find out URLs for announcement, grades and content
+   	# Returns KVP in the form of {[grades, url], [content, url]}
+	def specificCourseHome(self) :
+		toRet = {}
+		xpath = "//a[@class='d2l-navigation-s-link']"	
+		self.load(xpath, 5)
+
+		elements = self.browser.find_elements_by_xpath(xpath)
+
+		for element in elements :
+				text = element.text.strip()
+				if text == "Grades" or text == "Content" :
+					toRet[text] = element.get_attribute("href")
+
+		self.filesInCurrentDirectory = []
+		for key in toRet :
+			self.filesInCurrentDirectory.append(key)
+		self.gradeContent = toRet
 
 	# This method is basically called when app logged into learn and lists all the courses and commands available.
 	# This is only called once.
@@ -140,8 +161,9 @@ class Desire2Download:
 			directory += " " + c
 		directory = directory.strip()
 
+		size = len(self.pageHistory)
+
 		if directory == ".." :
-			size = len(self.pageHistory)
 			if size == 1 :
 				print("This is the home directory")
 			else :	
@@ -149,10 +171,23 @@ class Desire2Download:
 				self.filesInCurrentDirectory = self.fileHistory[size - 2]
 				self.pageHistory.pop()
 				self.fileHistory.pop()
+				# Debugging purpose
+				print(self.pageHistory[size - 2])
 		elif directory in self.filesInCurrentDirectory :
-			self.filesInCurrentDirectory = ["testing"]
-			self.pageHistory.append("do something")
+			link = None
+			if size == 1 :
+				link = self.courseInfoDict[directory]
+				self.browser.get(link)
+				#Debugging purpose
+				# print(self.browser.current_url)
+				self.specificCourseHome()
+			if size == 2 :
+				link = self.gradeContent[directory]
+				self.browser.get(link)
+			self.pageHistory.append(link)
 			self.fileHistory.append(self.filesInCurrentDirectory)
+			# Debugging purpose
+			print(link)
 		else :
 			print(directory + " does not exist")
 
