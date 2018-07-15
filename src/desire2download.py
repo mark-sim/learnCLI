@@ -25,6 +25,10 @@ class Desire2Download:
 		self.pageHistory = []
 		# list of files.
 		self.fileHistory = []
+		# True if grade page has been already loaded in browser. Otherwise False.
+		self.gradeLoaded = False
+		# True if content page has been already loaded in browser. Otherwise False.
+		self.contentLoaded = False
 
 
 	def login(self) :
@@ -183,6 +187,7 @@ class Desire2Download:
 				self.specificCourseHome()
 			if size == 2 :
 				link = self.gradeContent[directory]
+				self.filesInCurrentDirectory = []
 				self.browser.get(link)
 				if directory == "Grades" :
 					self.getFilesInCurrentDirectoryGrades()
@@ -197,13 +202,16 @@ class Desire2Download:
 
 
 	def getFilesInCurrentDirectoryGrades(self) :
-		time.sleep(3)
+		timeSec = 3
+		if self.gradeLoaded :
+			timeSec = 1
+		time.sleep(timeSec)
+		self.gradeLoaded = True
 		gradesTableXpath = "//div[@class='d2l-grid-container']"
 		tableRowXpath = "//tr"
 		tableColTextXpath = "//label"
 
 		tableRows = self.browser.find_elements_by_xpath(tableRowXpath)
-		self.filesInCurrentDirectory = []
 
 		if len(tableRows) == 1 : 
 			return
@@ -216,6 +224,25 @@ class Desire2Download:
 				print("-------------------------------------------------")
 			i = i + 1
 
+	def getFilesInCurrentDirectoryContent(self) :
+		timeSec = 5
+		if self.contentLoaded :
+			timeSec = 2
+		time.sleep(timeSec)
+		self.contentLoaded = True
+		listXpath = "//li"
+		tableOfContentXpath = "//ul//ul//li[contains(@class, 'd2l-datalist-item') and contains(@class ,'d2l-datalist-simpleitem')]"
+		dirList = self.browser.find_elements_by_xpath(listXpath)
+
+		for directory in dirList :
+			if directory.text.startswith("Table of Contents") :
+				directory.click()
+				time.sleep(timeSec)
+				tableOfContent = self.browser.find_elements_by_xpath(tableOfContentXpath)
+				for file in tableOfContent :
+					fileName = file.text.strip()
+					if fileName != "" :
+						self.filesInCurrentDirectory.append(fileName.splitlines()[0])
 
 	def getInput(self) :
 		command = ""
