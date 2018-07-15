@@ -184,12 +184,37 @@ class Desire2Download:
 			if size == 2 :
 				link = self.gradeContent[directory]
 				self.browser.get(link)
+				if directory == "Grades" :
+					self.getFilesInCurrentDirectoryGrades()
+				if directory == "Content" :
+					self.getFilesInCurrentDirectoryContent()
 			self.pageHistory.append(link)
 			self.fileHistory.append(self.filesInCurrentDirectory)
 			# Debugging purpose
 			print(link)
 		else :
 			print(directory + " does not exist")
+
+
+	def getFilesInCurrentDirectoryGrades(self) :
+		time.sleep(3)
+		gradesTableXpath = "//div[@class='d2l-grid-container']"
+		tableRowXpath = "//tr"
+		tableColTextXpath = "//label"
+
+		tableRows = self.browser.find_elements_by_xpath(tableRowXpath)
+		self.filesInCurrentDirectory = []
+
+		if len(tableRows) == 1 : 
+			return
+
+		print("\n-------------------------------------------------")
+		i = 0
+		for tableRow in tableRows :
+			if i > 0 :
+				print(tableRow.text)
+				print("-------------------------------------------------")
+			i = i + 1
 
 
 	def getInput(self) :
