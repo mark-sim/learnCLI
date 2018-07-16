@@ -232,13 +232,14 @@ class Desire2Download:
 			i = i + 1
 
 	def getFilesInCurrentDirectoryContent(self) :
-		timeSec = 5
+		timeSec = 8
 		if self.contentLoaded :
 			timeSec = 2
-		time.sleep(timeSec)
+		time.sleep(2)
 		self.contentLoaded = True
 		listXpath = "//li"
 		tableOfContentXpath = "//ul//ul//li[contains(@class, 'd2l-datalist-item') and contains(@class ,'d2l-datalist-simpleitem')]"
+
 		dirList = self.browser.find_elements_by_xpath(listXpath)
 
 		for directory in dirList :
@@ -250,6 +251,7 @@ class Desire2Download:
 					fileName = file.text.strip()
 					if fileName != "" :
 						self.filesInCurrentDirectory.append(fileName.splitlines()[0])
+				break
 
 	def getInput(self) :
 		command = ""
@@ -265,8 +267,8 @@ class Desire2Download:
 			self.cdCommand(command[1:])
 		elif command[0] == "d2d":
 			print("d2d")
-			dbx = dropbox.Dropbox("eyfYhpO4qDAAAAAAAAAACq85M49Hy932LpZLlAFC5csGELUz8c-3FkargQh743WJ")
-			self.uploadToDropbox()
+			# self.uploadToDropbox()
+			self.downloadFile(command[1:])
 		elif command[0] == "h":
 			print(self.getCommands())
 		elif command[0] == "q":
@@ -274,6 +276,60 @@ class Desire2Download:
 			print("Exiting...")
 		else :
 			print("Unknown command. Please type h to see list of commands available")
+
+	# Files can be comma seprated to indicate multiple files.
+	# Maybe support regex later.
+	def downloadFile(self, files) :
+		if len(files) == 0 :
+			return
+
+		directory = ""
+		for c in files :
+			directory += " " + c
+		fileNames = [x.strip() for x in directory.split(',')]
+
+		tableOfContentActionXpath = "//ul//ul//li[contains(@class, 'd2l-datalist-item') and contains(@class ,'d2l-datalist-simpleitem')]"
+		downloadXpath = ".//a[@class=' vui-dropdown-menu-item-link']"
+
+		try:
+			listOfFiles = self.browser.find_elements_by_xpath(tableOfContentActionXpath)
+		except Exception:
+			print("Please call d2d in Content directory.")
+
+		downloadedFiles = []
+		for file in listOfFiles :
+			fileName = self.isToDownload(file, fileNames)
+			if fileName != None :
+				try:
+					file.find_element_by_xpath(".//a[@class='d2l-contextmenu-ph']").click()
+					print("1")
+					time.sleep(1)
+					print("2")
+					actions = file.find_elements_by_xpath(downloadXpath)
+					for action in actions :
+						if action.text.strip() == "Download" :
+							action.click()
+					print("3")
+					downloadedFiles.append(fileName)
+				except Exception:
+					print("Could not download " + fileName + ".")
+
+				if len(downloadedFiles) == len(fileNames) :
+					break
+
+		# Check which files haven't been downloaded
+		for downloadedFile in downloadedFiles :
+			fileNames.remove(downloadedFile)
+
+		# Print out files that haven't been downloaded
+		for fileName in fileNames :
+			print(fileName + " can't be downloaded (Not downloadable file).")
+
+	def isToDownload(self, file, fileNames) :
+		for fileName in fileNames :
+			if file.text.strip().startswith(fileName) :
+				return fileName
+		return None
 
 	def uploadToDropbox(self) :
 		# look at the api to finish this.
