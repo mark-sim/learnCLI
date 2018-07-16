@@ -1,10 +1,9 @@
-import mechanicalsoup as ms
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
-from bs4 import BeautifulSoup as bs
+import dropbox
 import time
 import sys
 import re
@@ -29,7 +28,15 @@ class Desire2Download:
 		self.gradeLoaded = False
 		# True if content page has been already loaded in browser. Otherwise False.
 		self.contentLoaded = False
+		# Dropbox instance. If already authenticated it will hold an instance. Otherwise None.
+		self.getDropboxAuth()
 
+	def getDropboxAuth(self) :
+		try :
+			file = open("../d2d.auth", "r")
+			self.dbx = dropbox.Dropbox(file.read())
+		except Exception :
+			self.dbx = None
 
 	def login(self) :
 		xpaths = { 'usernameTxtBox' : "//input[@name='username']",
@@ -258,6 +265,8 @@ class Desire2Download:
 			self.cdCommand(command[1:])
 		elif command[0] == "d2d":
 			print("d2d")
+			dbx = dropbox.Dropbox("eyfYhpO4qDAAAAAAAAAACq85M49Hy932LpZLlAFC5csGELUz8c-3FkargQh743WJ")
+			self.uploadToDropbox()
 		elif command[0] == "h":
 			print(self.getCommands())
 		elif command[0] == "q":
@@ -265,6 +274,10 @@ class Desire2Download:
 			print("Exiting...")
 		else :
 			print("Unknown command. Please type h to see list of commands available")
+
+	def uploadToDropbox(self) :
+		# look at the api to finish this.
+		self.dbx.files_upload()
 
 	def removeIgnoreCourses(self) :
 		for ignoreCourseRegex in self.ignoreCourses :
