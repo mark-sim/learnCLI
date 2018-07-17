@@ -26,10 +26,10 @@ def main():
 	# First determine the platform the application is running in and set the phantomJS accordingly.
 	if platform == "win32":
 		# Windows
-		path = os.path.abspath("../platform/windows/PhantomJS/bin/phantomjs.exe")
+		path = os.path.abspath("../platform/windows/Chrome/bin/chromedriver.exe")
 	elif platform == "darwin":
 		# OS X
-		path = os.path.abspath("../platform/mac/PhantomJS/bin/phantomjs")
+		path = os.path.abspath("../platform/mac/Chrome/bin/chromedriver")
 		
 
 	for opt, arg in opts:
