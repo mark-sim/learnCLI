@@ -44,7 +44,12 @@ class Desire2Download:
 				   'submitButton' : "//input[@name='submit']"
 				 }
 		try:
-			browser = webdriver.PhantomJS(executable_path = self.path)
+			# Set driver preferences
+			chromeOptions = webdriver.ChromeOptions()
+			prefs = {"download.default_directory" : "C:/Users/USER/Desktop/temp/xd"}
+			chromeOptions.add_experimental_option("prefs", prefs)
+
+			browser = webdriver.Chrome(executable_path = self.path, chrome_options = chromeOptions)
 			# Set fake browser size before doing get. This is to avoid 'Element is not currently visible and may not be manipulated' exception
 			browser.set_window_size(1124, 850)
 			browser.get(self.url)
