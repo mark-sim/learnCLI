@@ -46,7 +46,17 @@ class Desire2Download:
 		try:
 			# Set driver preferences
 			chromeOptions = webdriver.ChromeOptions()
-			prefs = {"download.default_directory" : "C:/Users/USER/Desktop/temp/xd"}
+			prefs = {}
+			with open("../d2d.config") as f :
+				for line in f.read().splitlines() :
+					if line.strip() == "" : 
+						continue
+					try :
+						d2dProperty = line.split("=")
+						prefs[d2dProperty[0].strip()] = d2dProperty[1].strip()
+					except Exception :
+						print("Please define d2d configuration propertly.")
+
 			chromeOptions.add_experimental_option("prefs", prefs)
 
 			browser = webdriver.Chrome(executable_path = self.path, chrome_options = chromeOptions)
@@ -91,9 +101,9 @@ class Desire2Download:
 		# (Can't use BeautifulSoup or MechanicalSoup due to new learn updates)
 		courses = "//a[@class='d2l-image-tile-base-link style-scope d2l-image-tile-base']"
 
-		# Increasing time will guarantee javascript loading but 5 sec should be enough in most cases.
+		# Increasing time will guarantee javascript loading but 10 sec should be enough in most cases.
 		time.sleep(1)
-		self.load(courses, 5)
+		self.load(courses, 10)
 
 		courseElements = self.browser.find_elements_by_xpath(courses)
 		courseInfoDict = {}
@@ -217,11 +227,12 @@ class Desire2Download:
 		timeSec = 3
 		if self.gradeLoaded :
 			timeSec = 1
-		time.sleep(timeSec)
-		self.gradeLoaded = True
+		# time.sleep(timeSec)
 		gradesTableXpath = "//div[@class='d2l-grid-container']"
 		tableRowXpath = "//tr"
 		tableColTextXpath = "//label"
+		self.load(gradesTableXpath, timeSec)
+		self.gradeLoaded = True
 
 		tableRows = self.browser.find_elements_by_xpath(tableRowXpath)
 
@@ -240,17 +251,20 @@ class Desire2Download:
 		timeSec = 8
 		if self.contentLoaded :
 			timeSec = 2
-		time.sleep(2)
-		self.contentLoaded = True
+		# time.sleep(2)
 		listXpath = "//li"
+		listTableXpath = "//div[@class='d2l-twopanelselector-side-padding']"
 		tableOfContentXpath = "//ul//ul//li[contains(@class, 'd2l-datalist-item') and contains(@class ,'d2l-datalist-simpleitem')]"
+		self.load(listTableXpath, timeSec)
+		self.contentLoaded = True
 
 		dirList = self.browser.find_elements_by_xpath(listXpath)
 
 		for directory in dirList :
 			if directory.text.startswith("Table of Contents") :
 				directory.click()
-				time.sleep(timeSec)
+				# time.sleep(timeSec)
+				self.load(tableOfContentXpath, timeSec)
 				tableOfContent = self.browser.find_elements_by_xpath(tableOfContentXpath)
 				for file in tableOfContent :
 					fileName = file.text.strip()
@@ -307,14 +321,11 @@ class Desire2Download:
 			if fileName != None :
 				try:
 					file.find_element_by_xpath(".//a[@class='d2l-contextmenu-ph']").click()
-					print("1")
-					time.sleep(1)
-					print("2")
+					self.load(".//a[@class='d2l-contextmenu-ph']", 3)
 					actions = file.find_elements_by_xpath(downloadXpath)
 					for action in actions :
 						if action.text.strip() == "Download" :
 							action.click()
-					print("3")
 					downloadedFiles.append(fileName)
 				except Exception:
 					print("Could not download " + fileName + ".")
