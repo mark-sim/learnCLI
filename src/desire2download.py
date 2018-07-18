@@ -28,8 +28,11 @@ class Desire2Download:
 		self.gradeLoaded = False
 		# True if content page has been already loaded in browser. Otherwise False.
 		self.contentLoaded = False
+		# preferences for chrome driver
+		self.prefs = {}
 		# Dropbox instance. If already authenticated it will hold an instance. Otherwise None.
 		self.getDropboxAuth()
+
 
 	def getDropboxAuth(self) :
 		try :
@@ -46,18 +49,17 @@ class Desire2Download:
 		try:
 			# Set driver preferences
 			chromeOptions = webdriver.ChromeOptions()
-			prefs = {}
 			with open("../d2d.config") as f :
 				for line in f.read().splitlines() :
 					if line.strip() == "" : 
 						continue
 					try :
 						d2dProperty = line.split("=")
-						prefs[d2dProperty[0].strip()] = d2dProperty[1].strip()
+						self.prefs[d2dProperty[0].strip()] = d2dProperty[1].strip()
 					except Exception :
 						print("Please define d2d configuration propertly.")
 
-			chromeOptions.add_experimental_option("prefs", prefs)
+			chromeOptions.add_experimental_option("prefs", self.prefs)
 
 			browser = webdriver.Chrome(executable_path = self.path, chrome_options = chromeOptions)
 			# Set fake browser size before doing get. This is to avoid 'Element is not currently visible and may not be manipulated' exception
@@ -286,8 +288,8 @@ class Desire2Download:
 			self.cdCommand(command[1:])
 		elif command[0] == "d2d":
 			print("d2d")
-			self.downloadFile(command[1:])
-			self.uploadToDropbox()
+			fileNames = self.downloadFile(command[1:])
+			self.uploadToDropbox(fileNames)
 		elif command[0] == "h":
 			print(self.getCommands())
 		elif command[0] == "q":
@@ -306,6 +308,7 @@ class Desire2Download:
 		for c in files :
 			directory += " " + c
 		fileNames = [x.strip() for x in directory.split(',')]
+		ret = [x.strip() for x in directory.split(',')]
 
 		tableOfContentActionXpath = "//ul//ul//li[contains(@class, 'd2l-datalist-item') and contains(@class ,'d2l-datalist-simpleitem')]"
 		downloadXpath = ".//a[@class=' vui-dropdown-menu-item-link']"
@@ -341,16 +344,26 @@ class Desire2Download:
 		for fileName in fileNames :
 			print(fileName + " can't be downloaded (Not downloadable file).")
 
+		return ret
+
 	def isToDownload(self, file, fileNames) :
 		for fileName in fileNames :
 			if file.text.strip().startswith(fileName) :
 				return fileName
 		return None
 
-	def uploadToDropbox(self) :
-		f = open("C:/Users/USER/Desktop/temp/xd/exam drop-in Math TC.pdf", 'rb')
-		# look at the api to finish this.
-		self.dbx.files_upload(f.read(), "/test/exam drop-in Math TC.pdf", mode = dropbox.files.WriteMode('overwrite') ,mute = True)
+	def uploadToDropbox(self, fileNames) :
+		time.sleep(len(fileNames) * 5)
+
+		for fileName in fileNames :
+			try :
+				print(self.prefs["download.default_directory"] + "/" + fileName)
+				f = open(self.prefs["download.default_directory"] + "/" + fileName + ".pdf", 'rb')
+				# look at the api to finish this.
+				self.dbx.files_upload(f.read(), "/desire2download/" + fileName + ".pdf", mode = dropbox.files.WriteMode('overwrite') ,mute = True)
+			except Exception :
+				print("Could not upload " + fileName + " to dropbox.")
+				continue
 
 	def removeIgnoreCourses(self) :
 		for ignoreCourseRegex in self.ignoreCourses :
