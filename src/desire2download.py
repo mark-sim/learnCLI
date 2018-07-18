@@ -286,8 +286,8 @@ class Desire2Download:
 			self.cdCommand(command[1:])
 		elif command[0] == "d2d":
 			print("d2d")
-			# self.uploadToDropbox()
 			self.downloadFile(command[1:])
+			self.uploadToDropbox()
 		elif command[0] == "h":
 			print(self.getCommands())
 		elif command[0] == "q":
@@ -348,8 +348,9 @@ class Desire2Download:
 		return None
 
 	def uploadToDropbox(self) :
+		f = open("C:/Users/USER/Desktop/temp/xd/exam drop-in Math TC.pdf", 'rb')
 		# look at the api to finish this.
-		self.dbx.files_upload()
+		self.dbx.files_upload(f.read(), "/test/exam drop-in Math TC.pdf", mode = dropbox.files.WriteMode('overwrite') ,mute = True)
 
 	def removeIgnoreCourses(self) :
 		for ignoreCourseRegex in self.ignoreCourses :
