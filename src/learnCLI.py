@@ -3,19 +3,17 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
+import glob
 import dropbox
 import time
 import sys
 import re
 
-class Desire2Download:
+class LearnCLI:
 
-	def __init__(self, username, password, overwrite, ignoreFiles, ignoreCourses, path) :
+	def __init__(self, username, password, path) :
 		self.username = username
 		self.password = password
-		self.overwrite = overwrite
-		self.ignoreFiles = ignoreFiles
-		self.ignoreCourses = ignoreCourses
 		self.path = path
 		self.url = "https://learn.uwaterloo.ca"
 		self.filesInCurrentDirectory = []
@@ -49,6 +47,9 @@ class Desire2Download:
 		try:
 			# Set driver preferences
 			chromeOptions = webdriver.ChromeOptions()
+			chromeOptions.add_argument("--log-level=3")
+			chromeOptions.add_argument("--disable-gpu")
+			chromeOptions.add_argument("--headless")
 			with open("../d2d.config") as f :
 				for line in f.read().splitlines() :
 					if line.strip() == "" : 
@@ -147,8 +148,6 @@ class Desire2Download:
 	# This method is basically called when app logged into learn and lists all the courses and commands available.
 	# This is only called once.
 	def getCourseHome(self) :
-		self.removeIgnoreCourses()
-
 		toPrint = self.getCommands()
 
 		# print for init.
@@ -220,7 +219,7 @@ class Desire2Download:
 			self.pageHistory.append(link)
 			self.fileHistory.append(self.filesInCurrentDirectory)
 			# Debugging purpose
-			print(link)
+			# print(link)
 		else :
 			print(directory + " does not exist")
 
@@ -267,12 +266,16 @@ class Desire2Download:
 				directory.click()
 				# time.sleep(timeSec)
 				self.load(tableOfContentXpath, timeSec)
+				time.sleep(2)
 				tableOfContent = self.browser.find_elements_by_xpath(tableOfContentXpath)
 				for file in tableOfContent :
 					fileName = file.text.strip()
-					if fileName != "" :
+					if fileName != "" and self.isNotExcluded(fileName):
 						self.filesInCurrentDirectory.append(fileName.splitlines()[0])
 				break
+
+	def isNotExcluded(self, fileName) :
+			return not (fileName.endswith("Link") or fileName.endswith("External Learning Tool") or fileName.endswith("Web Page") or fileName.endswith("Quiz"))
 
 	def getInput(self) :
 		command = ""
@@ -287,7 +290,6 @@ class Desire2Download:
 		elif command[0] == "cd":
 			self.cdCommand(command[1:])
 		elif command[0] == "d2d":
-			print("d2d")
 			fileNames = self.downloadFile(command[1:])
 			self.uploadToDropbox(fileNames)
 		elif command[0] == "h":
@@ -353,30 +355,40 @@ class Desire2Download:
 		return None
 
 	def uploadToDropbox(self, fileNames) :
-		time.sleep(len(fileNames) * 5)
-
 		for fileName in fileNames :
 			try :
-				print(self.prefs["download.default_directory"] + "/" + fileName)
-				f = open(self.prefs["download.default_directory"] + "/" + fileName + ".pdf", 'rb')
-				# look at the api to finish this.
-				self.dbx.files_upload(f.read(), "/desire2download/" + fileName + ".pdf", mode = dropbox.files.WriteMode('overwrite') ,mute = True)
+				totalWaitTime = 0
+				fileRegex = self.prefs["download.default_directory"] + "/" + fileName + "*"
+				downloadedFiles = glob.glob(fileRegex)
+
+				# Wait until download started
+				while len(downloadedFiles) == 0 :
+					time.sleep(1)
+					totalWaitTime += 1
+					if totalWaitTime == 60 :
+						print("Timeout")
+						return
+					downloadedFiles = glob.glob(fileRegex)
+
+				# Wait until .crdownload disappeared (meaning download completed)
+				while len(glob.glob(fileRegex)) > 0 and glob.glob(fileRegex)[0].endswith("crdownload") :
+						time.sleep(1)
+						totalWaitTime += 1
+						if totalWaitTime == 60 :
+							print("Timeout")
+							return
+						continue
+				downloadedFile = glob.glob(fileRegex)[0]
+				downloadedFileName = downloadedFile[downloadedFile.index(fileName):]
+				f = open(downloadedFile, 'rb')
+
+				print("Dropping " + downloadedFile + " to Dropbox")
+				# Actually drop the file into dropbox
+				self.dbx.files_upload(f.read(), "/learnCLI/" + downloadedFileName, mode = dropbox.files.WriteMode('overwrite') ,mute = True)
+				print("Dropped" + downloadedFile + " to Dropbox")
 			except Exception :
 				print("Could not upload " + fileName + " to dropbox.")
 				continue
-
-	def removeIgnoreCourses(self) :
-		for ignoreCourseRegex in self.ignoreCourses :
-			listOfKeysToRemove = []
-			# Iterate through course names and add any courses that need to be ignored
-			for courseNames in self.courseInfoDict :
-				if (ignoreCourseRegex.search(courseNames)) :
-					listOfKeysToRemove.append(courseNames)
-
-			# Now actually delete those courses in the dictionar y
-			for keyToBeRemoved in listOfKeysToRemove :
-				del self.courseInfoDict[keyToBeRemoved]
-
 
 	def tearDown(self) :
 		self.browser.close()
