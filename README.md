@@ -17,7 +17,12 @@ Clone this repository then run
 ```
 python setup.py install
 ```
-from the root repository.
+from the root repository or,
+
+```
+pip install dropbox
+pip install selenium
+```
 
 ## Configuration
 There are some required configuration if you want to use the Dropbox feature.
