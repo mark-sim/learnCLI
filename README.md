@@ -1,7 +1,9 @@
 
+
 # LearnCLI : A command line tool for [Learn](https://learn.uwaterloo.ca)
 
 LearnCLI is a python application that allows you to access [Learn](https://learn.uwaterloo.ca) from a command line. It's easy to view your grades (including feedbacks) and you can also download course contents. Additionally, LearnCLI can be used to automatically download course contents and drop it to your Dropbox.
+LearnCLI was inspired by Stephen Holiday's [Desire2Learn](https://github.com/sholiday/desire2download)
 
 ## Requirements
 * [python](https://www.python.org/getit/) (3+)
@@ -39,7 +41,16 @@ python -W ignore __main__.py -u username -p password
 | **cd**   | change directory  |
 | **d2d**  | downloads specified file and drops it to your dropbox (Regex supported) |
 
-#### Example:
+#### ```d2d``` Command Example
+```d2d``` command supports regex which allows you to easily upload files to your Dropbox without having to specify each files one by one.
+
+```d2d *```: Download and upload all files
+```d2d ^S*```: Download and upload all files starting with S
+```d2d lecture```: Download and upload all files containing "lecture"
+```d2d lecture1, lecture2```: Download and upload all files containing "lecture1" and "lecture2"
+
+
+#### Example
 ```
 python -W ignore __main__.py -u username -p password
 
@@ -72,14 +83,25 @@ Assignment 1
 18 / 20
 90 %
 Individual Feedback
-Good start Sung! You included some important factors contributing to intercultural differences and biases. However, you needed to include more detail and explanation to make your response stronger. Be sure to include references where needed, Step 1 in this case, to relate to the course content. For step 2, you pointed out some very relevant assumption made through cultural biases. Including more detail to your response would of the methods to avoid these biases would have made your answers more wholesome.
+Good start Sung! You included some important factors contributing to intercultural 
+differences and biases. However, you needed to include more detail and explanation 
+to make your response stronger. Be sure to include references where needed, Step 1
+in this case, to relate to the course content. For step 2, you pointed out some 
+very relevant assumption made through cultural biases. Including more detail to 
+your response would of the methods to avoid these biases would have made your
+answers more wholesome.
 -------------------------------------------------
 Assignment 2
 16 / 20
 16 / 20
 80 %
 Individual Feedback
-Great start Sung! You included some interesting aspects of your family values which needed to be elaborated upn in Part 1 of your response. You included a good example for Question 3 in part 1 but more detail was required to receive full marks. For part 2, you included some relevant ideas and concepts but a stronger explanation and connection to the course content was required. Also you did not mention which two questions you were answering to.
+Great start Sung! You included some interesting aspects of your family values which
+needed to be elaborated upn in Part 1 of your response. You included a good example 
+for Question 3 in part 1 but more detail was required to receive full marks. 
+For part 2, you included some relevant ideas and concepts but a stronger explanation 
+and connection to the course content was required. Also you did not mention which two 
+questions you were answering to.
 -------------------------------------------------
 ...
 >>> cd ..
@@ -102,3 +124,9 @@ Dropped C:/Users/USER/Desktop/temp/SuccessCoachingWorkshopsWinter2014.pdf to Dro
 Dropping C:/Users/USER/Desktop/temp/StudySessionsPosterWinter2014.pdf to Dropbox
 Dropped C:/Users/USER/Desktop/temp/StudySessionsPosterWinter2014.pdf to Dropbox
 ```
+#### Future Updates in mind
+* Implement another command to download files every 12 hours (time can be configurable)
+* Implement another command to export Learn calendar to a .ics file.
+
+Also LearnCLI hasn't been tested extensively. 
+If you find a bug or have a feature you'd like, please [let me know](https://github.com/marksim5/learnCLI/issues)
