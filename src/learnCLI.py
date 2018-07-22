@@ -8,6 +8,7 @@ import dropbox
 import time
 import sys
 import re
+import os
 
 class LearnCLI:
 
@@ -48,8 +49,6 @@ class LearnCLI:
 			# Set driver preferences
 			chromeOptions = webdriver.ChromeOptions()
 			chromeOptions.add_argument("--log-level=3")
-			chromeOptions.add_argument("--disable-gpu")
-			chromeOptions.add_argument("--headless")
 			with open("../d2d.config") as f :
 				for line in f.read().splitlines() :
 					if line.strip() == "" : 
@@ -63,8 +62,10 @@ class LearnCLI:
 			chromeOptions.add_experimental_option("prefs", self.prefs)
 
 			browser = webdriver.Chrome(executable_path = self.path, chrome_options = chromeOptions)
-			# Set fake browser size before doing get. This is to avoid 'Element is not currently visible and may not be manipulated' exception
-			browser.set_window_size(1124, 850)
+			# Set browser size before doing get. This is to avoid 'Element is not currently visible and may not be manipulated' exception
+			browser.set_window_size(1000,1000)
+			# Make browser not visible to users. We can use headless chrome but https://bugs.chromium.org/p/chromedriver/issues/detail?id=1973 doesn't allow headless chromes to download files.
+			browser.set_window_position(-10000,0)
 			browser.get(self.url)
 
 			# Output Message
@@ -310,7 +311,7 @@ class LearnCLI:
 		for c in files :
 			directory += " " + c
 		fileNames = [x.strip() for x in directory.split(',')]
-		ret = [x.strip() for x in directory.split(',')]
+		ret = []
 
 		tableOfContentActionXpath = "//ul//ul//li[contains(@class, 'd2l-datalist-item') and contains(@class ,'d2l-datalist-simpleitem')]"
 		downloadXpath = ".//a[@class=' vui-dropdown-menu-item-link']"
@@ -331,27 +332,21 @@ class LearnCLI:
 					for action in actions :
 						if action.text.strip() == "Download" :
 							action.click()
-					downloadedFiles.append(fileName)
+					ret.append(fileName)
 				except Exception:
 					print("Could not download " + fileName + ".")
-
-				if len(downloadedFiles) == len(fileNames) :
-					break
-
-		# Check which files haven't been downloaded
-		for downloadedFile in downloadedFiles :
-			fileNames.remove(downloadedFile)
-
-		# Print out files that haven't been downloaded
-		for fileName in fileNames :
-			print(fileName + " can't be downloaded (Not downloadable file).")
 
 		return ret
 
 	def isToDownload(self, file, fileNames) :
+		fileText = file.text.strip().splitlines()[0].strip()
 		for fileName in fileNames :
-			if file.text.strip().startswith(fileName) :
-				return fileName
+			m = re.search(fileName, fileText) 
+			if m == None :
+				return None
+			start, end = re.search(fileName, fileText).span()
+			if (start > 0 or end > 0) and fileText in self.filesInCurrentDirectory :
+				return fileText
 		return None
 
 	def uploadToDropbox(self, fileNames) :
@@ -385,7 +380,7 @@ class LearnCLI:
 				print("Dropping " + downloadedFile + " to Dropbox")
 				# Actually drop the file into dropbox
 				self.dbx.files_upload(f.read(), "/learnCLI/" + downloadedFileName, mode = dropbox.files.WriteMode('overwrite') ,mute = True)
-				print("Dropped" + downloadedFile + " to Dropbox")
+				print("Dropped " + downloadedFile + " to Dropbox")
 			except Exception :
 				print("Could not upload " + fileName + " to dropbox.")
 				continue
