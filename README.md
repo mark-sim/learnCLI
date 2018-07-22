@@ -54,6 +54,7 @@ python -W ignore __main__.py -u username -p password
 
 ```d2d lecture1, lecture2```: Download and upload all files containing "lecture1" and "lecture2"
 
+More information on regex can be found [here](https://medium.com/factory-mind/regex-tutorial-a-simple-cheatsheet-by-examples-649dc1c3f285)
 
 #### Example
 ```
