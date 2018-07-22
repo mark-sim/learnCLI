@@ -8,13 +8,15 @@ import dropbox
 import time
 import sys
 import re
-import os
 
 class LearnCLI:
 
-	def __init__(self, username, password, path) :
+	def __init__(self, username, password, overwrite, ignoreFiles, ignoreCourses, path) :
 		self.username = username
 		self.password = password
+		self.overwrite = overwrite
+		self.ignoreFiles = ignoreFiles
+		self.ignoreCourses = ignoreCourses
 		self.path = path
 		self.url = "https://learn.uwaterloo.ca"
 		self.filesInCurrentDirectory = []
@@ -62,10 +64,8 @@ class LearnCLI:
 			chromeOptions.add_experimental_option("prefs", self.prefs)
 
 			browser = webdriver.Chrome(executable_path = self.path, chrome_options = chromeOptions)
-			# Set browser size before doing get. This is to avoid 'Element is not currently visible and may not be manipulated' exception
-			browser.set_window_size(1000,1000)
-			# Make browser not visible to users. We can use headless chrome but https://bugs.chromium.org/p/chromedriver/issues/detail?id=1973 doesn't allow headless chromes to download files.
-			browser.set_window_position(-10000,0)
+			# Set fake browser size before doing get. This is to avoid 'Element is not currently visible and may not be manipulated' exception
+			browser.set_window_size(1124, 850)
 			browser.get(self.url)
 
 			# Output Message
@@ -149,6 +149,8 @@ class LearnCLI:
 	# This method is basically called when app logged into learn and lists all the courses and commands available.
 	# This is only called once.
 	def getCourseHome(self) :
+		self.removeIgnoreCourses()
+
 		toPrint = self.getCommands()
 
 		# print for init.
@@ -220,7 +222,7 @@ class LearnCLI:
 			self.pageHistory.append(link)
 			self.fileHistory.append(self.filesInCurrentDirectory)
 			# Debugging purpose
-			# print(link)
+			print(link)
 		else :
 			print(directory + " does not exist")
 
@@ -276,7 +278,7 @@ class LearnCLI:
 				break
 
 	def isNotExcluded(self, fileName) :
-			return not (fileName.endswith("Link") or fileName.endswith("External Learning Tool") or fileName.endswith("Web Page") or fileName.endswith("Quiz"))
+			return not (fileName.endswith("Link") or fileName.endswith("External Learning Tool") or fileName.endswith("Web Page"))
 
 	def getInput(self) :
 		command = ""
@@ -291,6 +293,7 @@ class LearnCLI:
 		elif command[0] == "cd":
 			self.cdCommand(command[1:])
 		elif command[0] == "d2d":
+			print("d2d")
 			fileNames = self.downloadFile(command[1:])
 			self.uploadToDropbox(fileNames)
 		elif command[0] == "h":
@@ -311,7 +314,7 @@ class LearnCLI:
 		for c in files :
 			directory += " " + c
 		fileNames = [x.strip() for x in directory.split(',')]
-		ret = []
+		ret = [x.strip() for x in directory.split(',')]
 
 		tableOfContentActionXpath = "//ul//ul//li[contains(@class, 'd2l-datalist-item') and contains(@class ,'d2l-datalist-simpleitem')]"
 		downloadXpath = ".//a[@class=' vui-dropdown-menu-item-link']"
@@ -332,21 +335,27 @@ class LearnCLI:
 					for action in actions :
 						if action.text.strip() == "Download" :
 							action.click()
-					ret.append(fileName)
+					downloadedFiles.append(fileName)
 				except Exception:
 					print("Could not download " + fileName + ".")
+
+				if len(downloadedFiles) == len(fileNames) :
+					break
+
+		# Check which files haven't been downloaded
+		for downloadedFile in downloadedFiles :
+			fileNames.remove(downloadedFile)
+
+		# Print out files that haven't been downloaded
+		for fileName in fileNames :
+			print(fileName + " can't be downloaded (Not downloadable file).")
 
 		return ret
 
 	def isToDownload(self, file, fileNames) :
-		fileText = file.text.strip().splitlines()[0].strip()
 		for fileName in fileNames :
-			m = re.search(fileName, fileText) 
-			if m == None :
-				return None
-			start, end = re.search(fileName, fileText).span()
-			if (start > 0 or end > 0) and fileText in self.filesInCurrentDirectory :
-				return fileText
+			if file.text.strip().startswith(fileName) :
+				return fileName
 		return None
 
 	def uploadToDropbox(self, fileNames) :
@@ -380,10 +389,23 @@ class LearnCLI:
 				print("Dropping " + downloadedFile + " to Dropbox")
 				# Actually drop the file into dropbox
 				self.dbx.files_upload(f.read(), "/learnCLI/" + downloadedFileName, mode = dropbox.files.WriteMode('overwrite') ,mute = True)
-				print("Dropped " + downloadedFile + " to Dropbox")
+				print("Dropped" + downloadedFile + " to Dropbox")
 			except Exception :
 				print("Could not upload " + fileName + " to dropbox.")
 				continue
+
+	def removeIgnoreCourses(self) :
+		for ignoreCourseRegex in self.ignoreCourses :
+			listOfKeysToRemove = []
+			# Iterate through course names and add any courses that need to be ignored
+			for courseNames in self.courseInfoDict :
+				if (ignoreCourseRegex.search(courseNames)) :
+					listOfKeysToRemove.append(courseNames)
+
+			# Now actually delete those courses in the dictionar y
+			for keyToBeRemoved in listOfKeysToRemove :
+				del self.courseInfoDict[keyToBeRemoved]
+
 
 	def tearDown(self) :
 		self.browser.close()
