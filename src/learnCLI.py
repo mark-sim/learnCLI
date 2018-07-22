@@ -167,11 +167,9 @@ class LearnCLI:
 
 		toRet += "- h: help\n"
 		toRet += "- q: quit\n"
-		toRet += "- ls: list information about files in current directory\n"
+		toRet += "- ls: list all files in current directory\n"
 		toRet += "- cd: change directory\n"
-		toRet += "- d2d: downloads specified file and drops it to your dropbox\n"
-		toRet += "       If file is not specified then everything under the current directory\n"
-		toRet += "       will be downloaded and dropped into your dropbox\n"
+		toRet += "- d2d: downloads specified file and drops it to your dropbox (Regex supported)\n"
 
 		return toRet
 
