@@ -65,7 +65,6 @@ class LearnCLI:
 			# Set browser size before doing get. This is to avoid 'Element is not currently visible and may not be manipulated' exception
 			browser.set_window_size(1000,1000)
 			# Make browser not visible to users. We can use headless chrome but https://bugs.chromium.org/p/chromedriver/issues/detail?id=1973 doesn't allow headless chromes to download files.
-			browser.set_window_position(-10000,0)
 			browser.get(self.url)
 
 			# Output Message
