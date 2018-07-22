@@ -3,6 +3,8 @@
 # LearnCLI : A command line tool for [Learn](https://learn.uwaterloo.ca)
 
 LearnCLI is a python application that allows you to access [Learn](https://learn.uwaterloo.ca) from a command line. It's easy to view your grades (including feedbacks) and you can also download course contents. Additionally, LearnCLI can be used to automatically download course contents and drop it to your Dropbox.
+
+
 LearnCLI was inspired by Stephen Holiday's [Desire2Learn](https://github.com/sholiday/desire2download)
 
 ## Requirements
@@ -45,8 +47,11 @@ python -W ignore __main__.py -u username -p password
 ```d2d``` command supports regex which allows you to easily upload files to your Dropbox without having to specify each files one by one.
 
 ```d2d *```: Download and upload all files
+
 ```d2d ^S*```: Download and upload all files starting with S
+
 ```d2d lecture```: Download and upload all files containing "lecture"
+
 ```d2d lecture1, lecture2```: Download and upload all files containing "lecture1" and "lecture2"
 
 
