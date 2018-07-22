@@ -5,7 +5,7 @@
 LearnCLI is a python application that allows you to access [Learn](https://learn.uwaterloo.ca) from a command line. It's easy to view your grades (including feedbacks) and you can also download course contents. Additionally, LearnCLI can be used to automatically download course contents and drop it to your Dropbox.
 
 
-LearnCLI was inspired by Stephen Holiday's [Desire2Learn](https://github.com/sholiday/desire2download)
+LearnCLI was inspired by Stephen Holiday's [Desire2Download](https://github.com/sholiday/desire2download)
 
 ## Requirements
 * [python](https://www.python.org/getit/) (3+)
